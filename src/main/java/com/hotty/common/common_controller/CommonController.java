@@ -78,13 +78,11 @@ public class CommonController {
     }
 
     @PostMapping("/likes/{likeUID}/reveal")
-    public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> revealLike(
+    public Mono<ResponseEntity<ApiResponse<Object>>> revealLike(
             @PathVariable("likeUID") String likeUID,
             @RequestHeader("userUID") String userUID) {
-        // El caso de uso ahora devuelve el like actualizado.
-        // El manejo de errores se delega completamente al GlobalErrorHandlingAdvice.
         return revealLikeUseCase.execute(likeUID, userUID)
-                .map(result -> ResponseEntity.ok(ApiResponse.<Map<String, Object>>success("Like revealed successfully", (Map<String, Object>) result)));
+                .map(result -> ResponseEntity.ok(ApiResponse.<Object>success("Like revealed successfully", result)));
     }
 
     @GetMapping("/accept-like")

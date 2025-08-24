@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.hotty.common.dto.EventWrapper;
 import com.hotty.chat_service.model.MessageModel;
 import com.hotty.chat_service.repo.MessageModelRepo;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.ChatEventPublisher;
 import com.hotty.common.enums.PublishEventType;
 
 import ch.qos.logback.core.spi.ConfigurationEvent.EventType;
@@ -25,14 +25,14 @@ public class SendMessageUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(SendMessageUseCase.class);
     private final MessageModelRepo messageModelRepo;
-    private final EventPublisher publisher;
+    private final ChatEventPublisher publisher;
 
     /**
      * Constructs a new SendMessageUseCase.
      *
      * @param messageModelRepo The repository for message data operations.
      */
-    public SendMessageUseCase(MessageModelRepo messageModelRepo, EventPublisher publisher) {
+    public SendMessageUseCase(MessageModelRepo messageModelRepo, ChatEventPublisher publisher) {
         this.messageModelRepo = messageModelRepo;
         this.publisher = publisher;
     }
@@ -77,8 +77,8 @@ public class SendMessageUseCase {
                             savedMessage.getId(), savedMessage.getChatUID(), userUID);
 
                     // Use the saved message to publish, ensuring data consistency.
-                    Mono<Void> publishToSender = publisher.publishEvent(PublishEventType.CREATE, savedMessage, "message", savedMessage.getMessageId(), savedMessage.getSenderId());
-                    Mono<Void> publishToReceiver = publisher.publishEvent(PublishEventType.CREATE, savedMessage, "message", savedMessage.getMessageId(), savedMessage.getRecieverId());
+                    Mono<Void> publishToSender = publisher.publishMessageCreated(savedMessage, savedMessage.getSenderId());
+                    Mono<Void> publishToReceiver = publisher.publishMessageCreated(savedMessage, savedMessage.getRecieverId());
 
                     // Execute both publications in parallel and complete when both are done.
                     return Mono.zip(publishToSender, publishToReceiver).then();

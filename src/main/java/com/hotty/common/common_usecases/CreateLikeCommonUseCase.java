@@ -49,12 +49,15 @@ public class CreateLikeCommonUseCase {
             return Mono.error(new IllegalArgumentException("receiverUID and likeValue must not be null."));
         }
 
-        if (userUID.equals(receiverUID)) {
-            return Mono.error(new IllegalArgumentException("User cannot like themselves."));
-        }
 
-        if (likeValue < 1 || likeValue > 5) {
-            return Mono.error(new IllegalArgumentException("likeValue must be between 1 and 5."));
+        /// Luego de probar, descomentar este chequeo para evitar que un usuario se de like a si mismo
+
+        // if (userUID.equals(receiverUID)) {
+        //     return Mono.error(new IllegalArgumentException("User cannot like themselves."));
+        // }
+
+        if (likeValue < 0 || likeValue > 100) {
+            return Mono.error(new IllegalArgumentException("likeValue must be between 0 and 100."));
         }
 
         // Ejecutar ambas operaciones en una TRANSACCIÓN

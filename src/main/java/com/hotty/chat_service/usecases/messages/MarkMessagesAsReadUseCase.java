@@ -1,5 +1,5 @@
 package com.hotty.chat_service.usecases.messages;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.ChatEventPublisher;
 import com.hotty.common.enums.PublishEventType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import java.util.List;
 @Service
 public class MarkMessagesAsReadUseCase {
 
-    private final EventPublisher publisher;
+    private final ChatEventPublisher publisher;
 
     private static final Logger log = LoggerFactory.getLogger(MarkMessagesAsReadUseCase.class);
     private final MessageModelRepo messageModelRepo;
@@ -29,8 +29,8 @@ public class MarkMessagesAsReadUseCase {
      * @param messageModelRepo The repository for message data operations.
      * @throws IllegalArgumentException if messageModelRepo is null.
      */
-    public MarkMessagesAsReadUseCase(MessageModelRepo messageModelRepo, EventPublisher publisher) {
-       
+    public MarkMessagesAsReadUseCase(MessageModelRepo messageModelRepo, ChatEventPublisher publisher) {
+
         this.messageModelRepo = messageModelRepo;
        
         this.publisher = publisher;
@@ -61,8 +61,8 @@ public class MarkMessagesAsReadUseCase {
                 .flatMap(updatedMessage -> {
                     log.debug("Publicando actualización de estado 'leído' para el mensaje: {}", updatedMessage.getMessageId());
                     // Publicar la actualización a ambos participantes del chat.
-                    Mono<Void> publishToSender = publisher.publishEvent(PublishEventType.UPDATE, updatedMessage, "message", updatedMessage.getMessageId(), updatedMessage.getSenderId());
-                    Mono<Void> publishToReceiver = publisher.publishEvent(PublishEventType.UPDATE, updatedMessage, "message", updatedMessage.getMessageId(), updatedMessage.getRecieverId());
+                    Mono<Void> publishToSender = publisher.publishMessageUpdated(updatedMessage, updatedMessage.getSenderId());
+                    Mono<Void> publishToReceiver = publisher.publishMessageUpdated(updatedMessage, updatedMessage.getRecieverId());
 
                     // Esperar a que ambas publicaciones se completen antes de continuar con el siguiente mensaje.
                     return Mono.zip(publishToSender, publishToReceiver);

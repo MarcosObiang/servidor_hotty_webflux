@@ -6,7 +6,7 @@ import com.hotty.common.dto.EventWrapper;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.chat_service.interfaces.ChatRepository;
 import com.hotty.chat_service.model.ChatModel;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.ChatEventPublisher;
 
 import reactor.core.publisher.Mono;
 
@@ -26,7 +26,7 @@ public class CreateChatUseCase {
 
     private final ChatRepository chatRepository;
 
-    private final EventPublisher publisher;
+    private final ChatEventPublisher publisher;
 
     /**
      * Constructor que inyecta el repositorio de chats y el publicador de likes.
@@ -34,7 +34,7 @@ public class CreateChatUseCase {
      * @param chatRepository Repositorio para operaciones CRUD con chats.
      * @param publisher      Publicador de eventos de chats.
      */
-    public CreateChatUseCase(ChatRepository chatRepository, EventPublisher publisher) {
+    public CreateChatUseCase(ChatRepository chatRepository, ChatEventPublisher publisher) {
         this.chatRepository = chatRepository;
         this.publisher = publisher;
     }
@@ -80,8 +80,8 @@ public class CreateChatUseCase {
             // Publicar el evento de creación del chat
 
             return Mono
-                    .zip(publisher.publishEvent(PublishEventType.CREATE, savedChat, "chat", savedChat.getChatId(), user1Id),
-                            publisher.publishEvent(PublishEventType.CREATE, savedChat, "chat", savedChat.getChatId(), user2Id))
+                    .zip(publisher.publishChatCreated(savedChat, user1Id),
+                            publisher.publishChatCreated(savedChat, user2Id))
                     .thenReturn(savedChat);
         });
 

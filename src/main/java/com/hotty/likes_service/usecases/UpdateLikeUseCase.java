@@ -8,16 +8,16 @@ import com.hotty.likes_service.exceptions.AccessDeniedException;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.likes_service.model.LikeModel;
 import com.hotty.likes_service.repository.LikesRepo;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.LikeEventPublisher;
 
 import reactor.core.publisher.Mono;
 
 @Service
 public class UpdateLikeUseCase {
     private final LikesRepo likesRepo;
-    private final EventPublisher publisher;
+    private final LikeEventPublisher publisher;
 
-    public UpdateLikeUseCase(LikesRepo likesRepo, EventPublisher publisher) {
+    public UpdateLikeUseCase(LikesRepo likesRepo, LikeEventPublisher publisher) {
         this.likesRepo = likesRepo;
         this.publisher = publisher;
     }
@@ -51,7 +51,7 @@ public class UpdateLikeUseCase {
                     return likesRepo.add(likeToUpdate) // 'add' funciona como save/update
                             .flatMap(updatedLike ->
                                     // Encadenamos la publicación y devolvemos el like actualizado.
-                                    publisher.publishEvent(PublishEventType.UPDATE, updatedLike, "likes", updatedLike.getId(), "likes").thenReturn(updatedLike));
+                                    publisher.publishUserUpdated(updatedLike).thenReturn(updatedLike));
                 });
     }
 

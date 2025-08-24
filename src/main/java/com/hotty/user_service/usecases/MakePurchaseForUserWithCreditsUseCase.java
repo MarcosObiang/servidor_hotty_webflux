@@ -4,9 +4,9 @@ import java.sql.Date;
 
 import org.springframework.stereotype.Service;
 
+import com.hotty.common.services.UserEventPublisherService;
 import com.hotty.user_service.model.UserDataModel;
 import com.hotty.user_service.repository.interfaces.UserModelRepository;
-import com.hotty.user_service.services.UserEventPublisherService;
 
 import reactor.core.publisher.Mono;
 

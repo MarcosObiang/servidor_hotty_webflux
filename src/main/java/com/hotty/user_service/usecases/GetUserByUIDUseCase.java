@@ -21,7 +21,6 @@ public class GetUserByUIDUseCase {
     }
 
     public Mono<UserDTO> executeWithDTO(String userUID) {
-        System.out.println("*****************************************************************userUID: " + userUID);
         return userModelRepository.findByUserUID(userUID).map(UserDTOMapper::toDTO);
 
     }

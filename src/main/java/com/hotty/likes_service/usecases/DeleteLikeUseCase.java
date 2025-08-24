@@ -5,7 +5,7 @@ import com.hotty.likes_service.exceptions.AccessDeniedException;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.likes_service.model.LikeModel;
 import com.hotty.likes_service.repository.LikesRepo;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.LikeEventPublisher;
 
 import reactor.core.publisher.Mono;
 
@@ -13,9 +13,9 @@ import reactor.core.publisher.Mono;
 public class DeleteLikeUseCase {
 
     private final LikesRepo likesRepo;
-    private final EventPublisher publisher;
+    private final LikeEventPublisher publisher;
 
-    public DeleteLikeUseCase(LikesRepo likesRepo, EventPublisher publisher) {
+    public DeleteLikeUseCase(LikesRepo likesRepo, LikeEventPublisher publisher) {
         this.likesRepo = likesRepo;
         this.publisher = publisher;
     }
@@ -32,7 +32,7 @@ public class DeleteLikeUseCase {
                     // El operador 'then' espera a que 'delete' termine y luego ejecuta 'publishUserDeleted'.
                     // Toda la cadena devuelve un Mono<Void> que se completa cuando ambas operaciones terminan.
                     return likesRepo.delete(likeUID)
-                            .then(publisher.publishEvent(PublishEventType.DELETE, likeToDelete, "likes", likeToDelete.getId(), "likes"));
+                            .then(publisher.publishUserDeleted(likeToDelete).then());
                 });
     }
 }

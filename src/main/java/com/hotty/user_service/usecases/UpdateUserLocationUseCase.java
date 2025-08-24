@@ -3,9 +3,9 @@ package com.hotty.user_service.usecases;
 import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.stereotype.Component;
 
+import com.hotty.common.services.UserEventPublisherService;
 import com.hotty.user_service.model.UserDataModel;
 import com.hotty.user_service.repository.interfaces.UserModelRepository;
-import com.hotty.user_service.services.UserEventPublisherService;
 
 import reactor.core.publisher.Mono;
 

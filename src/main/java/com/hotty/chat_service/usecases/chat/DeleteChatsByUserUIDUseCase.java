@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.hotty.chat_service.interfaces.ChatRepository;
 import com.hotty.chat_service.model.ChatModel;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.ChatEventPublisher;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.chat_service.usecases.messages.DeleteMessagesUseCase;
 
@@ -27,12 +27,12 @@ public class DeleteChatsByUserUIDUseCase {
     private static final Logger log = LoggerFactory.getLogger(DeleteChatsByUserUIDUseCase.class);
     
     private final ChatRepository chatRepository;
-    private final EventPublisher publisher;
+    private final ChatEventPublisher publisher;
     private final DeleteMessagesUseCase deleteMessagesUseCase;
 
     public DeleteChatsByUserUIDUseCase(
-            ChatRepository chatRepository, 
-            EventPublisher publisher,
+            ChatRepository chatRepository,
+            ChatEventPublisher publisher,
             DeleteMessagesUseCase deleteMessagesUseCase) {
         this.chatRepository = chatRepository;
         this.publisher = publisher;
@@ -87,8 +87,8 @@ public class DeleteChatsByUserUIDUseCase {
      * Publica eventos de eliminación para cada chat eliminado.
      */
     private Flux<ChatModel> publishChatDeletionEvents(ChatModel deletedChat) {
-        Mono<Void> publishToUser1 = publisher.publishEvent(PublishEventType.DELETE, deletedChat, "chat", deletedChat.getChatId(), deletedChat.getUser1Id());
-        Mono<Void> publishToUser2 = publisher.publishEvent(PublishEventType.DELETE, deletedChat, "chat", deletedChat.getChatId(), deletedChat.getUser2Id());
+        Mono<Void> publishToUser1 = publisher.publishChatCreated(deletedChat, deletedChat.getUser1Id());
+        Mono<Void> publishToUser2 = publisher.publishChatCreated(deletedChat, deletedChat.getUser2Id());
 
         return Mono.when(publishToUser1, publishToUser2)
                    .thenReturn(deletedChat)

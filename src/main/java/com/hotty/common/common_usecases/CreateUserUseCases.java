@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
 public class CreateUserUseCases {
 
         private static final Logger log = LoggerFactory.getLogger(CreateUserUseCases.class);
-        private static final ObjectMapper objectMapper = new ObjectMapper();
+        private ObjectMapper objectMapper;
 
         private final MediaService mediaService;
         private final CreateUserUseCase createUserUseCase;
@@ -34,10 +34,12 @@ public class CreateUserUseCases {
 
         public CreateUserUseCases(MediaService mediaService,
                         CreateUserUseCase createUserUseCase,
-                        DeleteUserUseCase deleteUserUseCase) {
+                        DeleteUserUseCase deleteUserUseCase,
+                        ObjectMapper objectMapper) {
                 this.mediaService = mediaService;
                 this.createUserUseCase = createUserUseCase;
                 this.deleteUserUseCase = deleteUserUseCase;
+                this.objectMapper = objectMapper;
         }
 
         public Mono<String> execute(String userUID, String userJson,

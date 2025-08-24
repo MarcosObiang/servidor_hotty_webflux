@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.likes_service.model.LikeModel;
 import com.hotty.likes_service.repository.LikesRepo;
-import com.hotty.common.services.EventPublisher;
+import com.hotty.common.services.LikeEventPublisher;
 
 import reactor.core.publisher.Mono;
 
@@ -16,9 +16,9 @@ import reactor.core.publisher.Mono;
 public class CreateLikeUseCase {
 
     private final LikesRepo likesRepo;
-    private final EventPublisher publisher;
+    private final LikeEventPublisher publisher;
 
-    public CreateLikeUseCase(LikesRepo likesRepo, EventPublisher publisher) {
+    public CreateLikeUseCase(LikesRepo likesRepo, LikeEventPublisher publisher) {
         this.publisher = publisher;
         this.likesRepo = likesRepo;
     }
@@ -44,7 +44,7 @@ public class CreateLikeUseCase {
                 .flatMap(savedLike ->
                         // Encadenamos la publicación del evento.
                         // .thenReturn(savedLike) asegura que devolvemos el objeto original después de publicar.
-                        publisher.publishEvent(PublishEventType.CREATE, savedLike, "likes", savedLike.getId(), "likes").thenReturn(savedLike));
+                        publisher.publishUserCreated(savedLike).thenReturn(savedLike));
     }
 
 }
