@@ -29,7 +29,7 @@ public class GetUserByPositionUseCase {
     }
 
     public Flux<UserDTOwithDistance> execute(double latitude, double longitude, double radiusInKm,
-            HashMap<String, Object> characteristics, Integer maxAge, Integer minAge, String preferredSex) {
+            HashMap<String, Object> characteristics, Integer maxAge, Integer minAge, String preferredSex, String currentUserUID) {
         // Validar características antes de la consulta
         if (!areCharacteristicsValid(characteristics)) {
             return Flux.error(new IllegalArgumentException("Invalid characteristics provided"));
@@ -64,7 +64,10 @@ public class GetUserByPositionUseCase {
         GeoJsonPoint point = new GeoJsonPoint(longitude, latitude); // OJO: primero long, luego lat
         Distance distance = new Distance(radiusInKm, Metrics.KILOMETERS);
         // CORRECCIÓN: Usar el parámetro 'preferredSex' en lugar de un valor fijo "Both".
-        return userModelRepository.findByLocationNear(point, distance, characteristics, maxAge, minAge, preferredSex);
+        return userModelRepository.findByLocationNear(point, distance, characteristics, maxAge, minAge, preferredSex).filter(userWithDistance -> {
+                // Filtrar para excluir al usuario actual
+                return !userWithDistance.getUserUID().equals(currentUserUID);
+            });
 
     }
 

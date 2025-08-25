@@ -37,7 +37,7 @@ public class CreateLikeUseCase {
         like.setSenderUID(senderUID);
         like.setReceiverUID(receiverUID);
         like.setCreatedAt(now);
-        like.setOfferExpirationDate(now.plusSeconds(60 * 60 * 24)); // Expira en 24 horas
+        like.setOfferExpirationDate(now.plusSeconds(10)); // Expira en 2 minutos ***IMPORTANTE**** CAMBIAR EN PRODUCCION A 24 HORAS (86400 segundos) o (60*60*24)
         like.setLikeValue(likeValue);
 
         return likesRepo.add(like)

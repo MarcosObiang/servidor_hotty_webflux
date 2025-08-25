@@ -147,6 +147,7 @@ public class Controller {
 
         @GetMapping("/get-users-by-position")
         public Mono<ResponseEntity<ApiResponse<List<UserDTOwithDistance>>>> getUsersByPosition(
+                        @RequestHeader("userUID") String currentUserUID,
                         @RequestParam Map<String, String> allParams) {
 
                 try {
@@ -172,7 +173,7 @@ public class Controller {
                         // 3. Llamar al caso de uso con los parámetros ya separados.
                         return getUserByPositionUseCase
                                         .execute(latitude, longitude, radiusInKm, characteristics, maxAge, minAge,
-                                                        preferredSex)
+                                                        preferredSex, currentUserUID)
                                         .collectList()
                                         .map(userList -> ResponseEntity.ok(ApiResponse.success(userList)));
                 } catch (NumberFormatException | NullPointerException e) {

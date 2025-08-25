@@ -27,7 +27,15 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Procesa imagen removiendo metadatos EXIF para cumplimiento LGPD
+ * - Elimina geolocalización (Art. 6º, VII)  
+ * - Elimina identificación de dispositivo
+ * - Mantiene solo metadatos técnicos necesarios
+ */
 @Service
 @RequiredArgsConstructor
 public class MediaService {
@@ -36,6 +44,8 @@ public class MediaService {
 
     @Value("${minio.bucket-name}")
     private String bucketName;
+
+    private static final Logger log = LoggerFactory.getLogger(MediaService.class);
 
     public Mono<String> uploadFile(FilePart file, String userId, int index, String fileName) {
         return DataBufferUtils.join(file.content())
@@ -81,6 +91,8 @@ public class MediaService {
                                                 .contentType(file.headers().getContentType().toString())
                                                 .build());
                             }
+
+                            log.info("LGPD: Metadatos EXIF eliminados para usuario: {} archivo: {}", userId, fileName);
 
                             return fileName;
                         }

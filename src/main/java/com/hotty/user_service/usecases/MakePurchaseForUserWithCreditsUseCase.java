@@ -32,6 +32,7 @@ public class MakePurchaseForUserWithCreditsUseCase {
     final UserModelRepository userModelRepository;
     final UserEventPublisherService userEventPublisherService;
     final static int REACTION_REVELATION_COST = 200; // Cost in credits for revealing a reaction
+    final static int EXPIRED_REACTION_REVELATION_COST = 400; // Cost in credits for revealing an expired reaction
     final static int ANNONYMOUS_CHAT_COST = 150; // Cost in credits for starting an anonymous chat
 
     public MakePurchaseForUserWithCreditsUseCase(UserModelRepository userModelRepository,
@@ -79,16 +80,23 @@ public class MakePurchaseForUserWithCreditsUseCase {
                 if (step1.getRewards().getCoins() < REACTION_REVELATION_COST) {
                     return Mono.error(new IllegalArgumentException("Not enough credits for reaction revelation."));
                 }
+            } else if (purchaseType.equals("EXPIRED_REACTION_REVELATION")) {
+                if (step1.getRewards().getCoins() < EXPIRED_REACTION_REVELATION_COST) {
+                    return Mono
+                            .error(new IllegalArgumentException("Not enough credits for expired reaction revelation."));
+                }
             } else if (purchaseType.equals("ANONYMOUS_CHAT")) {
                 if (step1.getRewards().getCoins() < ANNONYMOUS_CHAT_COST) {
                     return Mono.error(new IllegalArgumentException("Not enough credits for anonymous chat."));
                 }
             }
 
+            int cost = purchaseType.equals("REACTION_REVELATION") ? REACTION_REVELATION_COST
+                    : (purchaseType.equals("EXPIRED_REACTION_REVELATION") ? EXPIRED_REACTION_REVELATION_COST
+                            : ANNONYMOUS_CHAT_COST);
+
             return userModelRepository
-                    .substractCreditsFromUser(userUID,
-                            (purchaseType.equals("REACTION_REVELATION") ? REACTION_REVELATION_COST
-                                    : ANNONYMOUS_CHAT_COST))
+                    .substractCreditsFromUser(userUID, cost)
                     .flatMap(updatedUser -> {
                         // Check if the user has 200 or fewer credits after the purchase
                         if (updatedUser.getRewards().getCoins() <= 200
