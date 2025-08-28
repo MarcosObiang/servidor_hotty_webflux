@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.hotty.common.enums.PublishEventType;
+import com.hotty.common.services.EventPublishers.LikeEventPublisher;
 import com.hotty.likes_service.model.LikeModel;
 import com.hotty.likes_service.repository.LikesRepo;
-import com.hotty.common.services.LikeEventPublisher;
 
 import reactor.core.publisher.Mono;
 

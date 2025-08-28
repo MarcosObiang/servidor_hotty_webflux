@@ -1,6 +1,6 @@
 package com.hotty.user_service.usecases;
 
-import com.hotty.common.services.UserEventPublisherService;
+import com.hotty.common.services.EventPublishers.UserEventPublisherService;
 import com.hotty.user_service.model.UserCharacteristicsModel;
 import com.hotty.user_service.model.UserDataModel;
 import com.hotty.user_service.repository.interfaces.UserModelRepository;

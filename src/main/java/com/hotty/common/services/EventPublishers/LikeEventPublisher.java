@@ -1,8 +1,10 @@
-package com.hotty.common.services;
+package com.hotty.common.services.EventPublishers;
+
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hotty.common.dto.EventWrapper;
 import com.hotty.common.enums.PublishEventType;
+import com.hotty.likes_service.model.LikeModel;
 import com.hotty.user_service.model.UserDataModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,51 +13,54 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
-public class UserEventPublisherService {
+public class LikeEventPublisher {
 
-    private static final Logger log = LoggerFactory.getLogger(UserEventPublisherService.class);
+    private static final Logger log = LoggerFactory.getLogger(LikeEventPublisher.class);
+
+    
 
     // Canal único para todos los eventos de usuario. Los suscriptores escucharán
     // aquí.
     private static final String USER_EVENTS_CHANNEL = "user:events";
-    private static final String USER_DATA_TYPE = "user";
+    private static final String USER_DATA_TYPE = "like";
 
     private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    public UserEventPublisherService(ReactiveRedisTemplate<String, String> reactiveRedisTemplate,
+    public LikeEventPublisher(ReactiveRedisTemplate<String, String> reactiveRedisTemplate,
             ObjectMapper objectMapper) {
         this.reactiveRedisTemplate = reactiveRedisTemplate;
         this.objectMapper = objectMapper;
     }
 
-    public Mono<Void> publishUserCreated(UserDataModel user) {
-        EventWrapper<UserDataModel> event = new EventWrapper<>();
+    public Mono<Void> publishUserCreated(LikeModel user) {
+        EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.CREATE);
         event.setBody(user);
-        event.setResourceUID(user.getUserUID());
-        event.setReceiverUID(user.getUserUID()); // El usuario creado es el receptor del evento.
+        event.setResourceUID(user.getLikeUID());
+        event.setReceiverUID(user.getReceiverUID()); // El usuario creado es el receptor del evento.
         event.setDataType(USER_DATA_TYPE);
         return publish(event);
     }
 
-    public Mono<Void> publishUserUpdated(UserDataModel user) {
-        EventWrapper<UserDataModel> event = new EventWrapper<>();
+    public Mono<Void> publishUserUpdated(LikeModel user) {
+        EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.UPDATE);
         event.setBody(user);
-        event.setResourceUID(user.getUserUID());
-        event.setReceiverUID(user.getUserUID()); // El usuario actualizado es el receptor del evento.
+        event.setResourceUID(user.getLikeUID());
+        event.setReceiverUID(user.getReceiverUID()); // El usuario actualizado es el receptor del evento.
         event.setDataType(USER_DATA_TYPE);
         return publish(event);
     }
 
-    public Mono<Void> publishUserDeleted(String userUID) {
-        EventWrapper<String> event = new EventWrapper<>();
+    public Mono<Void> publishUserDeleted(LikeModel deletedLike) {
+        EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.DELETED);
-        event.setBody(userUID); // Para la eliminación, el cuerpo puede ser simplemente el UID.
-        event.setResourceUID(userUID);
+        event.setBody(deletedLike); // Enviar el objeto completo para consistencia.
+        event.setResourceUID(deletedLike.getLikeUID());
         event.setDataType(USER_DATA_TYPE);
-        event.setReceiverUID(userUID); // El usuario eliminado es el receptor del evento.
+        // Notificar al receptor original que el like fue eliminado.
+        event.setReceiverUID(deletedLike.getReceiverUID());
         return publish(event);
     }
 

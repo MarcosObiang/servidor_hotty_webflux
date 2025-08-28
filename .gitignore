@@ -42,3 +42,6 @@ build/
 ### Logs ###
 logs/
 *.log
+
+## Claves de google
+src/main/resources/hotty-notificaciones-9c17e9555579.json

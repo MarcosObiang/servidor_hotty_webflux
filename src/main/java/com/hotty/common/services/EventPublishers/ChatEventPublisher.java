@@ -1,4 +1,4 @@
-package com.hotty.common.services;
+package com.hotty.common.services.EventPublishers;
 
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;

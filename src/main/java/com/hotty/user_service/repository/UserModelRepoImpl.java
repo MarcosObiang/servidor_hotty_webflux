@@ -375,7 +375,16 @@ public class UserModelRepoImpl implements UserModelRepository {
                                                                 "No se encontró un usuario con el UID: " + userUID)));
         }
 
+        @Override
+        public Mono<UserDataModel> updateDeviceNotificationToken(String userUID, String deviceNotificationToken) {
+                Query query = new Query(Criteria.where("userUID").is(userUID));
+                Update update = new Update().set("deviceNotificationToken", deviceNotificationToken);
+                FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
 
-        
+                return reactiveMongoTemplate.findAndModify(query, update, options, UserDataModel.class)
+                                .switchIfEmpty(
+                                                Mono.error(new NoSuchElementException(
+                                                                "No se encontró un usuario con el UID: " + userUID)));
+        }
 
 }

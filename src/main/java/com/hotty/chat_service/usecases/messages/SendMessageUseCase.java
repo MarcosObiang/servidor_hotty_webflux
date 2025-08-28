@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import com.hotty.common.dto.EventWrapper;
 import com.hotty.chat_service.model.MessageModel;
 import com.hotty.chat_service.repo.MessageModelRepo;
-import com.hotty.common.services.ChatEventPublisher;
 import com.hotty.common.enums.PublishEventType;
+import com.hotty.common.services.EventPublishers.ChatEventPublisher;
 
 import ch.qos.logback.core.spi.ConfigurationEvent.EventType;
 import reactor.core.publisher.Mono;

@@ -28,6 +28,7 @@ import com.hotty.user_service.usecases.MakePurchaseForUserWithCreditsUseCase;
 import com.hotty.user_service.usecases.RenewUserCreditsUseCase;
 import com.hotty.user_service.usecases.UpdateAverageRatingUseCase;
 import com.hotty.user_service.usecases.UpdateBioUseCase;
+import com.hotty.user_service.usecases.UpdateDeviceNotificationToken;
 import com.hotty.user_service.usecases.UpdateFilterCharacteristicsUseCase;
 import com.hotty.user_service.usecases.UpdateProfileDiscoverySettingsUseCase;
 import com.hotty.user_service.usecases.UpdateUserCharacteristicsUseCase;
@@ -64,9 +65,8 @@ public class Controller {
         private final UpdateAverageRatingUseCase updateAverageRatingUseCase; // Use case for updating average rating
         private final RenewUserCreditsUseCase renewUserCreditsUseCase; // Use case for renewing user credits
         private final ClaimFirstRewardUseCase claimFirstRewardUseCase; // Use case for claiming first reward
-        private final MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase; // Use case for
-                                                                                                   // making purchases
-                                                                                                   // with user credits
+        private final MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase;
+        private final UpdateDeviceNotificationToken updateDeviceNotificationToken;
 
         // Use case for updating user bio
 
@@ -85,7 +85,8 @@ public class Controller {
                         UpdateAverageRatingUseCase updateAverageRatingUseCase,
                         RenewUserCreditsUseCase renewUserCreditsUseCase,
                         ClaimFirstRewardUseCase claimFirstRewardUseCase,
-                        MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase) {
+                        MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase,
+                        UpdateDeviceNotificationToken updateDeviceNotificationToken) {
                 this.createUserUseCase = createUserUseCase;
                 this.getUserByUIDUseCase = getUserByUIDUseCase;
                 this.getUserByPositionUseCase = getUserByPositionUseCase;
@@ -102,9 +103,8 @@ public class Controller {
                 // Initialize the use case for updating user bio
                 this.renewUserCreditsUseCase = renewUserCreditsUseCase; // Use case for renewing user credits
                 this.claimFirstRewardUseCase = claimFirstRewardUseCase; // Use case for claiming first reward
-                this.makePurchaseForUserWithCreditsUseCase = makePurchaseForUserWithCreditsUseCase; // Use case for
-                                                                                                    // making purchases
-                                                                                                    // with user credits
+                this.makePurchaseForUserWithCreditsUseCase = makePurchaseForUserWithCreditsUseCase;
+                this.updateDeviceNotificationToken = updateDeviceNotificationToken;
         }
 
         // CREATE METHODS
@@ -328,4 +328,20 @@ public class Controller {
                                 .map(updatedUser -> ResponseEntity.ok(
                                                 ApiResponse.success("Purchase made successfully.", updatedUser)));
         }
+
+        @PostMapping("/update-device-notification-token")
+        public Mono<ResponseEntity<ApiResponse<UserDataModel>>> updateDeviceNotificationToken(
+                        @RequestHeader("userUID") String userUID,
+                        @RequestBody Map<String, String> request) {
+                String deviceNotificationToken = request.get("deviceNotificationToken");
+                if (deviceNotificationToken == null) {
+                        return Mono.error(new IllegalArgumentException("Device notification token is required."));
+                }
+
+                return updateDeviceNotificationToken.execute(userUID, deviceNotificationToken)
+                                .map(updatedUser -> ResponseEntity.ok(
+                                                ApiResponse.success("Device notification token updated successfully.",
+                                                                updatedUser)));
+        }
+
 }

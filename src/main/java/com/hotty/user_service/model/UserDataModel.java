@@ -50,6 +50,7 @@ public class UserDataModel {
     private String userImage5;
     private String userImage6;
     private Integer userRating;
+    private String deviceNotificationToken;
 
     private String sex;
     @JsonDeserialize(using = GeoJsonPointDeserializer.class)

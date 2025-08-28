@@ -4,9 +4,9 @@ import org.springframework.stereotype.Component;
 
 import com.hotty.common.dto.EventWrapper;
 import com.hotty.common.enums.PublishEventType;
+import com.hotty.common.services.EventPublishers.ChatEventPublisher;
 import com.hotty.chat_service.interfaces.ChatRepository;
 import com.hotty.chat_service.model.ChatModel;
-import com.hotty.common.services.ChatEventPublisher;
 
 import reactor.core.publisher.Mono;
 

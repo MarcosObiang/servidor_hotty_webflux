@@ -2,7 +2,7 @@ package com.hotty.user_service.usecases;
 
 import org.springframework.stereotype.Service;
 
-import com.hotty.common.services.UserEventPublisherService;
+import com.hotty.common.services.EventPublishers.UserEventPublisherService;
 import com.hotty.user_service.repository.interfaces.UserModelRepository;
 
 import reactor.core.publisher.Mono;
