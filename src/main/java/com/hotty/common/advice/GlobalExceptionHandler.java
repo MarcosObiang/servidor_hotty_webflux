@@ -4,6 +4,8 @@ import com.hotty.ApiResponse.ApiResponse;
 import com.hotty.common.exceptions.BusinessValidationException;
 import com.hotty.common.exceptions.DownstreamServiceException;
 import com.hotty.common.exceptions.ResourceNotFoundException;
+import com.hotty.gateway_server.exceptions.UnauthorizedException;
+
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,8 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+
+  
     /**
      * Maneja excepciones de tipo ResourceNotFoundException.
      * Usada cuando no se encuentra un recurso específico.

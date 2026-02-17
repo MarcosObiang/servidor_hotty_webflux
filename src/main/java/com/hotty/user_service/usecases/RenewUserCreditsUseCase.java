@@ -30,16 +30,22 @@ public class RenewUserCreditsUseCase {
         return userModelRepository.findByUserUID(userUID)
                 .flatMap(userData -> {
                     Long nextDailyRewardTimestamp = userData.getRewards().getNextDailyRewardTimestamp();
-                    Long currentTimestamp = System.currentTimeMillis();
+                    long currentTimestamp = System.currentTimeMillis();
+                    Boolean isWaitingFirstReward = userData.getRewards().getWaitingFirstReward();
 
-                    if (nextDailyRewardTimestamp == null || currentTimestamp >= nextDailyRewardTimestamp) {
+                    if (Boolean.FALSE.equals(isWaitingFirstReward) && (nextDailyRewardTimestamp == null || currentTimestamp >= nextDailyRewardTimestamp)) {
                         // El usuario puede reclamar la recompensa
                         return userModelRepository.updateProfileCredits(userUID, CREDITS_INCREMENT,
                                 0L, false).flatMap(newUserData -> {
-                                 return   userEventPublisherService.publishUserUpdated(newUserData).thenReturn(userData);
+                                 return userEventPublisherService.publishUserUpdated(newUserData).thenReturn(userData);
                                 });
                     } else {
-                        // El usuario ya reclamó su recompensa diaria
+                        // El usuario ya reclamó su recompensa diaria o no está esperando la primera recompensa
+                        if (nextDailyRewardTimestamp == null) {
+                            String errorMessage = "Daily reward not available yet.";
+                            return Mono.error(new IllegalArgumentException(errorMessage));
+                        }
+
                         long timeRemainingMs = nextDailyRewardTimestamp - currentTimestamp;
                         long hoursRemaining = timeRemainingMs / (60 * 60 * 1000);
                         long minutesRemaining = (timeRemainingMs % (60 * 60 * 1000)) / (60 * 1000);

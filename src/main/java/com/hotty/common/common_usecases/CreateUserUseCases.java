@@ -3,6 +3,7 @@ package com.hotty.common.common_usecases;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -126,7 +127,7 @@ public class CreateUserUseCases {
 
                         Mono<String> uploadMono = mediaService
                                         .uploadFile(images.get(i), userUID, imageIndex,
-                                                        userUID + "-profileImage-" + imageIndex)
+                                                        userUID + "-profileImage-" + imageIndex+ "-" + UUID.randomUUID())
                                         .doOnSuccess(url -> log.debug("Image {} uploaded successfully", imageIndex))
                                         .onErrorMap(WebClientResponseException.class,
                                                         ex -> new RuntimeException(

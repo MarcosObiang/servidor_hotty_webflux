@@ -32,7 +32,7 @@ public class DeleteLikeUseCase {
                     // El operador 'then' espera a que 'delete' termine y luego ejecuta 'publishUserDeleted'.
                     // Toda la cadena devuelve un Mono<Void> que se completa cuando ambas operaciones terminan.
                     return likesRepo.delete(likeUID)
-                            .then(publisher.publishUserDeleted(likeToDelete).then());
+                            .then(publisher.publishLikeDeleted(likeToDelete).then());
                 });
     }
 }

@@ -9,6 +9,7 @@ import com.hotty.likes_service.usecases.DeleteLikeUseCase;
 import com.hotty.chat_service.usecases.chat.CreateChatUseCase;
 import com.hotty.user_service.usecases.GetUserByUIDUseCase;
 import com.hotty.common.common_transactions.MongoTransactionsRepository;
+import com.hotty.common.common_transactions.TransactionRetryHelper;
 import com.hotty.likes_service.model.LikeModel;
 import com.hotty.user_service.model.UserDataModel;
 
@@ -20,17 +21,20 @@ public class AcceptLikeUseCase {
     private static final Logger log = LoggerFactory.getLogger(AcceptLikeUseCase.class);
 
     private final MongoTransactionsRepository transactionsRepository;
+    private final TransactionRetryHelper retryHelper;
     private final GetLikeUseCase getLikeUseCase;
     private final DeleteLikeUseCase deleteLikeUseCase;
     private final CreateChatUseCase createChatUseCase;
     private final GetUserByUIDUseCase getUserByUIDUseCase;
 
     public AcceptLikeUseCase(MongoTransactionsRepository transactionsRepository,
+                           TransactionRetryHelper retryHelper,
                            GetLikeUseCase getLikeUseCase,
                            DeleteLikeUseCase deleteLikeUseCase,
                            CreateChatUseCase createChatUseCase,
                            GetUserByUIDUseCase getUserByUIDUseCase) {
         this.transactionsRepository = transactionsRepository;
+        this.retryHelper = retryHelper;
         this.getLikeUseCase = getLikeUseCase;
         this.deleteLikeUseCase = deleteLikeUseCase;
         this.createChatUseCase = createChatUseCase;
@@ -44,9 +48,9 @@ public class AcceptLikeUseCase {
         return getLikeUseCase.execute(likeUID)
                 .flatMap(like -> validateAndGetUsers(like, userUID))
                 
-                // 2. Operaciones críticas EN TRANSACCIÓN
-                .flatMap(userData -> 
-                    transactionsRepository.executeInTransaction(template -> {
+                // 2. Operaciones críticas EN TRANSACCIÓN con REINTENTOS
+                .flatMap(userData -> {
+                    Mono<String> transactionOperation = transactionsRepository.executeInTransaction(template -> {
                         // Crear chat Y eliminar like en UNA SOLA transacción
                         return createChatUseCase.execute(
                                 userData.sender.getUserUID(),
@@ -59,8 +63,14 @@ public class AcceptLikeUseCase {
                                 deleteLikeUseCase.execute(userUID, likeUID)
                                     .thenReturn("Like accepted and chat created successfully")
                             );
-                    })
-                );
+                    });
+                    
+                    // Aplicar reintentos para errores transitorios
+                    return retryHelper.executeWithRetry(
+                        transactionOperation, 
+                        "AcceptLike_Transaction_" + likeUID
+                    );
+                });
     }
     
     private Mono<UserData> validateAndGetUsers(LikeModel like, String userUID) {
@@ -77,12 +87,10 @@ public class AcceptLikeUseCase {
 
     // Clase auxiliar para encapsular los datos
     private static class UserData {
-        final LikeModel like;
         final UserDataModel sender;
         final UserDataModel receiver;
 
         UserData(LikeModel like, UserDataModel sender, UserDataModel receiver) {
-            this.like = like;
             this.sender = sender;
             this.receiver = receiver;
         }

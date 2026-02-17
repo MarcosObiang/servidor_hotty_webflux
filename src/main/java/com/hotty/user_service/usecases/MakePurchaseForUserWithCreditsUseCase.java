@@ -71,7 +71,7 @@ public class MakePurchaseForUserWithCreditsUseCase {
                 return Mono.error(new IllegalArgumentException("User not found with UID: " + userUID));
             }
 
-            if (step1.getRewards().getIsPremium()) {
+            if (step1.getSubscription().getIsUserPremium()) {
                 // If the user is premium, they can make purchases without checking credits
                 return Mono.just(step1);
             }
@@ -102,7 +102,7 @@ public class MakePurchaseForUserWithCreditsUseCase {
                         if (updatedUser.getRewards().getCoins() <= 200
                                 && !updatedUser.getRewards().getWaitingReward()) {
                             return userModelRepository
-                                    .updateProfileCredits(userUID, updatedUser.getRewards().getCoins(),
+                                    .updateProfileCredits(userUID, 0,
                                             (System.currentTimeMillis() + 2 * 60 * 1000), true) // Set next daily reward
                                     // timestamp to 2 minutes
                                     // later in milliseconds (THIS

@@ -1,0 +1,82 @@
+services:
+
+
+  mongo1:
+    image: mongo:latest
+    container_name: mongo1
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo1-data:/data/db
+      - ./mongo-keyfile:/etc/mongo-keyfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    command: mongod --replSet rs0 --bind_ip 0.0.0.0 --keyFile /etc/mongo-keyfile
+    restart: always
+
+  mongo2:
+    image: mongo:latest
+    container_name: mongo2
+    ports:
+      - "127.0.0.2:27017:27017"
+    volumes:
+      - mongo2-data:/data/db
+      - ./mongo-keyfile:/etc/mongo-keyfile
+    command: mongod --replSet rs0 --bind_ip 0.0.0.0 --keyFile /etc/mongo-keyfile
+    restart: always
+
+  mongo3:
+    image: mongo:latest
+    container_name: mongo3
+    ports:
+      - "127.0.0.3:27017:27017"
+    volumes:
+      - mongo3-data:/data/db
+      - ./mongo-keyfile:/etc/mongo-keyfile
+    command: mongod --replSet rs0 --bind_ip 0.0.0.0 --keyFile /etc/mongo-keyfile
+    restart: always
+  
+  mongo-setup:
+    image: mongo:latest
+    container_name: mongo-setup
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    volumes:
+      - ./mongo-setup.sh:/scripts/mongo-setup.sh
+    entrypoint: ["/scripts/mongo-setup.sh"]
+
+  redisdb:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  redis-ui:
+    image: redis/redisinsight:latest
+    ports:
+      - 5540:5540
+    depends_on:
+      - redisdb
+      
+  minio-storage:
+    image: minio/minio:latest
+    ports:
+      - 9000:9000
+      - 9001:9001
+    restart: always
+    env_file:
+      - ../minio/env/.env
+    volumes:
+      - ../minio/data:/data
+    command: server --console-address ":9001" /data
+
+volumes:
+
+  mongo1-data:
+  mongo2-data:
+  mongo3-data:

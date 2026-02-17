@@ -66,4 +66,13 @@ public interface ChatRepository {
      * @return Un Flux que emite los chats eliminados.
      */
     Flux<ChatModel> deleteAllChatsByUserUID(String userId);
+
+    /**
+     * Actualiza la imagen de un usuario en todos sus chats donde aparece como user1 o user2.
+     * 
+     * @param userId ID del usuario cuya imagen cambió
+     * @param newPictureUrl Nueva URL de la imagen
+     * @return Un Flux que emite todos los ChatModel actualizados
+     */
+    Flux<ChatModel> updateUserPictureInAllChats(String userId, String newPictureUrl);
 }

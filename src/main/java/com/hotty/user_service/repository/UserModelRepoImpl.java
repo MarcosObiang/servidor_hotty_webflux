@@ -1,6 +1,7 @@
 package com.hotty.user_service.repository;
 
 import org.bson.Document;
+import org.checkerframework.checker.units.qual.N;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metric;
 import org.springframework.data.geo.Metrics;
@@ -17,10 +18,13 @@ import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.hotty.common.enums.NotificationProvider;
 import com.hotty.user_service.DTOs.UserDTOwithDistance;
+import com.hotty.user_service.enums.LocalizationCodes;
 import com.hotty.user_service.model.UserCharacteristicsModel;
 import com.hotty.user_service.model.UserDataModel;
 import com.hotty.user_service.model.UserSettingsModel;
+import com.hotty.user_service.model.UserSubscription;
 import com.hotty.user_service.repository.interfaces.UserModelRepository;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -69,6 +73,7 @@ public class UserModelRepoImpl implements UserModelRepository {
 
         @Override
         public Mono<UserDataModel> save(UserDataModel user) {
+
                 return reactiveMongoTemplate.save(user);
         }
 
@@ -316,7 +321,7 @@ public class UserModelRepoImpl implements UserModelRepository {
                 // después de la actualización.
                 FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
                 Update update = new Update()
-                                .set("rewards.coins", credits)
+                                .inc("rewards.coins", credits)
                                 .set("rewards.nextDailyRewardTimestamp", nextDailyRewardTimestamp)
                                 .set("rewards.waitingReward", waitingReward);
 
@@ -331,7 +336,7 @@ public class UserModelRepoImpl implements UserModelRepository {
                         Boolean waitingFirstReward) {
                 Query query = new Query(Criteria.where("userUID").is(userUID));
                 Update update = new Update()
-                                .set("rewards.coins", credits)
+                                .inc("rewards.coins", credits)
                                 .set("rewards.waitingFirstReward", waitingFirstReward);
                 FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
 
@@ -376,15 +381,41 @@ public class UserModelRepoImpl implements UserModelRepository {
         }
 
         @Override
-        public Mono<UserDataModel> updateDeviceNotificationToken(String userUID, String deviceNotificationToken) {
+        public Mono<UserDataModel> updateDeviceNotificationToken(String userUID, String deviceNotificationToken,
+                        NotificationProvider provider, LocalizationCodes locale) {
                 Query query = new Query(Criteria.where("userUID").is(userUID));
-                Update update = new Update().set("deviceNotificationToken", deviceNotificationToken);
+                Update update = new Update()
+                                .set("notificationData.notificationToken", deviceNotificationToken)
+                                .set("notificationData.provider", provider)
+                                .set("notificationData.locale", locale);
                 FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
 
                 return reactiveMongoTemplate.findAndModify(query, update, options, UserDataModel.class)
                                 .switchIfEmpty(
                                                 Mono.error(new NoSuchElementException(
                                                                 "No se encontró un usuario con el UID: " + userUID)));
+        }
+
+        @Override
+        public Mono<UserDataModel> updateUserSubscriptionData(String userUID, UserSubscription userSubscription) {
+                // TODO Auto-generated method stub
+                Query query = new Query(Criteria.where("userUID").is(userUID));
+                Update update = new Update().set("subscription", userSubscription);
+                FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true);
+                return reactiveMongoTemplate.findAndModify(query, update, options, UserDataModel.class)
+                                .switchIfEmpty(
+                                                Mono.error(new NoSuchElementException(
+                                                                "No se encontró un usuario con el UID: " + userUID)));
+        }
+
+        @Override
+        public Mono<UserDataModel> findUserByNotificationToken(String notificationToken) {
+                Query query = new Query(Criteria.where("notificationData.notificationToken").is(notificationToken));
+                return reactiveMongoTemplate.findOne(query, UserDataModel.class)
+                                .switchIfEmpty(
+                                                Mono.error(new NoSuchElementException(
+                                                                "No se encontró un usuario con el token de notificación: "
+                                                                                + notificationToken)));
         }
 
 }

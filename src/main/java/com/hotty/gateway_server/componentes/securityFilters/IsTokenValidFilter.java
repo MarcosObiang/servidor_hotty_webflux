@@ -40,7 +40,7 @@ public class IsTokenValidFilter implements WebFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         // Considera hacer esta lista de rutas excluidas configurable
         String path = exchange.getRequest().getURI().getPath();
-        if ((path.startsWith("/auth/") && path.endsWith("/callback")) || path.startsWith("/oauth/") || path.startsWith("/subscriptions-service/")) {
+        if ((path.startsWith("/auth/") && path.endsWith("/callback")) || path.startsWith("/oauth/") || path.startsWith("/subscriptions-service/webhooks/")) {
             // Salta el filtro para esta ruta
             return chain.filter(exchange);
         }

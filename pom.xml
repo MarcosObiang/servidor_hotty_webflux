@@ -46,6 +46,12 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+
 <!-- Firebase Admin SDK -->
 
     <dependency>
@@ -54,6 +60,13 @@
   <version>9.5.0</version>
 </dependency>
 
+
+
+  <!-- Spring Security OAuth2 Resource Server -->
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+  </dependency>
 
 
         <!-- Google Auth para FCM -->

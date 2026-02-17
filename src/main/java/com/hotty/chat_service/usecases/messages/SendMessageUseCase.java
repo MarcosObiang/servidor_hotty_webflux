@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 import com.hotty.common.dto.EventWrapper;
 import com.hotty.chat_service.model.MessageModel;
 import com.hotty.chat_service.repo.MessageModelRepo;
+import com.hotty.common.enums.NotificationDataType;
 import com.hotty.common.enums.PublishEventType;
 import com.hotty.common.services.EventPublishers.ChatEventPublisher;
+import com.hotty.common.services.PushNotifications.Factories.NotificationStrategyFactory;
+import com.hotty.user_service.model.UserNotificationDataModel;
+import com.hotty.user_service.usecases.GetUserByUIDUseCase;
 
 import ch.qos.logback.core.spi.ConfigurationEvent.EventType;
 import reactor.core.publisher.Mono;
@@ -26,15 +30,20 @@ public class SendMessageUseCase {
     private static final Logger log = LoggerFactory.getLogger(SendMessageUseCase.class);
     private final MessageModelRepo messageModelRepo;
     private final ChatEventPublisher publisher;
+    private final GetUserByUIDUseCase getUserByUIDUseCase;
+    private final NotificationStrategyFactory notificationStrategyFactory;
 
     /**
      * Constructs a new SendMessageUseCase.
      *
      * @param messageModelRepo The repository for message data operations.
      */
-    public SendMessageUseCase(MessageModelRepo messageModelRepo, ChatEventPublisher publisher) {
+    public SendMessageUseCase(MessageModelRepo messageModelRepo, ChatEventPublisher publisher,
+            GetUserByUIDUseCase getUserByUIDUseCase, NotificationStrategyFactory notificationStrategyFactory) {
         this.messageModelRepo = messageModelRepo;
         this.publisher = publisher;
+        this.getUserByUIDUseCase = getUserByUIDUseCase;
+        this.notificationStrategyFactory = notificationStrategyFactory;
     }
 
     /**
@@ -71,35 +80,45 @@ public class SendMessageUseCase {
             message.setCreatedAt(Instant.now());
         }
 
-        return messageModelRepo.save(message)
-                .flatMap(savedMessage -> {
-                    log.info("Message id='{}' for chatUID='{}' by sender='{}' processed and saved successfully.",
-                            savedMessage.getId(), savedMessage.getChatUID(), userUID);
+        return getUserByUIDUseCase.execute(message.getRecieverId())
+                .flatMap(user -> messageModelRepo.save(message)
+                        .flatMap(savedMessage -> {
+                            log.info(
+                                    "Message id='{}' for chatUID='{}' by sender='{}' processed and saved successfully.",
+                                    savedMessage.getId(), savedMessage.getChatUID(), userUID);
 
-                    // Use the saved message to publish, ensuring data consistency.
-                    Mono<Void> publishToSender = publisher.publishMessageCreated(savedMessage, savedMessage.getSenderId());
-                    Mono<Void> publishToReceiver = publisher.publishMessageCreated(savedMessage, savedMessage.getRecieverId());
+                            UserNotificationDataModel notificationDataModel = user.getNotificationData();
 
-                    // Execute both publications in parallel and complete when both are done.
-                    return Mono.zip(publishToSender, publishToReceiver).then();
-                })
-                .doOnError(error ->
-                // The repository already logs DataAccessExceptions in detail.
-                // This log provides context at the use case level for any failure.
-                log.error("Failed to process and save message for chatUID='{}', senderUID='{}': {}",
-                        message.getChatUID(), userUID, error.getMessage(), error))
-                .onErrorMap(e -> {
-                    // Avoid re-wrapping exceptions already handled or specific to this use case.
-                    if (e instanceof SendMessageException || e instanceof IllegalArgumentException) {
-                        return e;
-                    }
-                    // Wrap other errors (like DataAccessException from repo) in a use-case-specific
-                    // exception.
-                    return new SendMessageException(
-                            String.format("Error sending message for chatUID '%s' by sender '%s'.",
-                                    message.getChatUID(), userUID),
-                            e);
-                });
+                            Mono<Void> sendPushNotificationMono = notificationStrategyFactory
+                                    .getStrategy(notificationDataModel.getProvider())
+                                    .sendNotification(NotificationDataType.MESSAGE, notificationDataModel);
+
+                            // Use the saved message to publish, ensuring data consistency.
+                            Mono<Void> publishToSender = publisher.publishMessageCreated(savedMessage,
+                                    savedMessage.getSenderId());
+                            Mono<Void> publishToReceiver = publisher.publishMessageCreated(savedMessage,
+                                    savedMessage.getRecieverId());
+
+                            // Execute both publications in parallel and complete when both are done.
+                            return Mono.zip(publishToSender, publishToReceiver, sendPushNotificationMono).then();
+                        })
+                        .doOnError(error ->
+                        // The repository already logs DataAccessExceptions in detail.
+                        // This log provides context at the use case level for any failure.
+                        log.error("Failed to process and save message for chatUID='{}', senderUID='{}': {}",
+                                message.getChatUID(), userUID, error.getMessage(), error))
+                        .onErrorMap(e -> {
+                            // Avoid re-wrapping exceptions already handled or specific to this use case.
+                            if (e instanceof SendMessageException || e instanceof IllegalArgumentException) {
+                                return e;
+                            }
+                            // Wrap other errors (like DataAccessException from repo) in a use-case-specific
+                            // exception.
+                            return new SendMessageException(
+                                    String.format("Error sending message for chatUID '%s' by sender '%s'.",
+                                            message.getChatUID(), userUID),
+                                    e);
+                        }));
     }
 
     /**

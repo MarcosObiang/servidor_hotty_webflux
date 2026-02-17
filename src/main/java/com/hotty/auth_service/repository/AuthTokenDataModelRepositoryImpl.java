@@ -57,7 +57,10 @@ public class AuthTokenDataModelRepositoryImpl implements AuthTokenDataModelRepos
                 .apply(update)
                 .withOptions(FindAndModifyOptions.options().returnNew(true)) // <--- esto es clave
                 .findAndModify()
-                .onErrorMap(ex -> new RuntimeException("Error al actualizar el estado de revocación del token en la auditoría para tokenUID: " + tokenUID, ex));
+                .onErrorMap(ex -> new RuntimeException(
+                        "Error al actualizar el estado de revocación del token en la auditoría para tokenUID: "
+                                + tokenUID,
+                        ex));
     }
 
     /**
@@ -88,6 +91,10 @@ public class AuthTokenDataModelRepositoryImpl implements AuthTokenDataModelRepos
     }
 
     /**
+     * ESTE METODO ES UN ERROR DE DISEÑO PREFIO Y SERA DEPRECATED.
+     * 
+     * ESTA LOGICA DEBE ESTAR EN UN USE CASE O SERVICE, NO EN EL REPOSITORIO. 
+     *
      * Revoca un token activo de forma inmediata añadiendo su UID (jti) a la
      * blacklist de Redis.
      * Además, actualiza asíncronamente el estado de revocación en el log de
@@ -154,5 +161,15 @@ public class AuthTokenDataModelRepositoryImpl implements AuthTokenDataModelRepos
         // se hayan iniciado/finalizado antes de que la operación de revocación se
         // considere completa.
         return Mono.when(setRedisBlacklistEntry, updateMongoAuditLog);
+    }
+
+    @Override
+    public Mono<AuthTokenDataModel> findByTokenUID(String tokenUID) {
+        Query query = new Query();
+        query.addCriteria(Criteria.where("tokenUID").is(tokenUID));
+
+        return mongoTemplate.findOne(query, AuthTokenDataModel.class)
+                .switchIfEmpty(Mono.error(new NoSuchElementException(
+                        "No se encontró ningún token con el tokenUID proporcionado: " + tokenUID)));
     }
 }

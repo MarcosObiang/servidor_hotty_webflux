@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.hotty.user_service.Serializers.GeoJsonPointDeserializer;
+import com.hotty.user_service.enums.LocalizationCodes;
 import com.hotty.user_service.validators.ValidUserData;
 
 import lombok.Data;
@@ -34,12 +35,11 @@ public class UserDataModel {
 
     private Instant lastRatingDate;
 
-    private Integer averageReactionValue=0;
+    private Integer averageReactionValue = 0;
 
-    private Integer reactionCount=0;
+    private Integer reactionCount = 0;
 
-    private Integer totalReactionPoints=0;
-
+    private Integer totalReactionPoints = 0;
 
     private String name;
 
@@ -50,7 +50,6 @@ public class UserDataModel {
     private String userImage5;
     private String userImage6;
     private Integer userRating;
-    private String deviceNotificationToken;
 
     private String sex;
     @JsonDeserialize(using = GeoJsonPointDeserializer.class)
@@ -73,5 +72,11 @@ public class UserDataModel {
 
     // Anidamos el objeto de recompensas del usuario.
     private UserRewardsDataModel rewards = new UserRewardsDataModel();
+
+    // Anidamos el objeto de datos de notificaciones del usuario.
+    private UserNotificationDataModel notificationData = new UserNotificationDataModel();
+
+    // estado de la suscripción premium del usuario
+    private UserSubscription subscription= new UserSubscription();
 
 }

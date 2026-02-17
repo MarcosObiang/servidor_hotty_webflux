@@ -149,10 +149,13 @@ public class GoogleAuthProviderStrategy implements AuthProviderStrategy {
                 .then() // Esperar a que todos los flatMap anteriores terminen
                 // Paso 2: Generar y guardar el NUEVO token para la sesión actual
                 .then(jwtService.generateToken(name, email, savedAuthDataModel.getUserUID()))
-                .flatMap(newAuthTokenDataModel ->
+                .flatMap(newAuthTokenDataModel ->{
                 // Guardar el nuevo token en MongoDB para el historial (no en Redis, ya que
                 // Redis es solo blacklist)
-                authTokenDataModelRepository.saveTokenToAuditLog(newAuthTokenDataModel));
+
+                System.out.println("Generated new token for existing user: " + savedAuthDataModel.getUserUID()
+                        + " Email: " + email + " TokenUID: " + newAuthTokenDataModel.getTokenUID());
+               return authTokenDataModelRepository.saveTokenToAuditLog(newAuthTokenDataModel);});
     }
 
     /**

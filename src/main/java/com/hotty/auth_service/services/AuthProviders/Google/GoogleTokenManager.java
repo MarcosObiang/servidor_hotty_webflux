@@ -1,6 +1,5 @@
 package com.hotty.auth_service.services.AuthProviders.Google;
 
-
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
@@ -25,21 +24,14 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.concurrent.TimeUnit;
 
 // Clase para representar la respuesta del endpoint /token de Google
-record GoogleTokenResponse(String id_token, String access_token, String expires_in, String token_type) {}
+record GoogleTokenResponse(String id_token, String access_token, String expires_in, String token_type) {
+}
 
 @Component
 public class GoogleTokenManager {
 
-    @Value("${spring.security.oauth2.client.registration.google.client-id}")
-    private String googleClientIDString;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
-    private String googleClientSecretString;
-
-    // Aunque no se usa directamente en el POST al /token endpoint (donde se envía como parámetro),
-    // es útil para la consistencia si lo tienes en propiedades.
-    @Value("${spring.security.oauth2.client.registration.google.redirect-uri}")
-    private String googleRedirectUriString; // Asegúrate de que este es el URI exacto que configuraste en Google Cloud y que tu cliente usa.
+    private final String googleClientIDString = System.getenv("GOOGLE_CLIENT_ID");
+    private final String googleRedirectUriString = System.getenv("GOOGLE_REDIRECT_URI");
 
     private static final String GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token";
     private static final String GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs";
@@ -48,7 +40,8 @@ public class GoogleTokenManager {
     private final JwkProvider jwkProvider;
     private final ObjectMapper objectMapper; // Para parsear JSON manualmente si es necesario
 
-    public GoogleTokenManager(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) throws MalformedURLException {
+    public GoogleTokenManager(WebClient.Builder webClientBuilder, ObjectMapper objectMapper)
+            throws MalformedURLException {
         this.webClient = webClientBuilder.baseUrl(GOOGLE_TOKEN_URI).build();
         this.objectMapper = objectMapper;
 
@@ -67,30 +60,41 @@ public class GoogleTokenManager {
      */
     public Mono<DecodedJWT> getTokenFromCode(String code) {
         System.out.println("este es el code de google: " + code);
+        System.out.println("Este es el client id de google: " + googleClientIDString);
         return webClient.post()
                 .uri(GOOGLE_TOKEN_URI) // La URL completa para el POST
                 .body(BodyInserters.fromFormData("client_id", googleClientIDString)
                         .with("code", code)
                         .with("grant_type", "authorization_code")
-                        // Asegúrate de que este redirect_uri coincide EXACTAMENTE con el usado en el paso de autorización inicial
+                        // Asegúrate de que este redirect_uri coincide EXACTAMENTE con el usado en el
+                        // paso de autorización inicial
                         .with("redirect_uri", googleRedirectUriString)) // Usar la propiedad inyectada
                 .retrieve()
                 .bodyToMono(GoogleTokenResponse.class) // Mapear la respuesta directamente a un Pojo
                 .flatMap(tokenResponse -> {
                     if (tokenResponse == null || tokenResponse.id_token() == null) {
-                        return Mono.error(new IllegalArgumentException("Invalid Google token response: missing ID token."));
+                        return Mono.error(
+                                new IllegalArgumentException("Invalid Google token response: missing ID token."));
                     }
                     return decodeAndVerifyGoogleIdToken(tokenResponse.id_token());
                 })
                 .onErrorMap(e -> {
                     // Mapear excepciones de WebClient a algo más específico si es necesario
                     if (e instanceof org.springframework.web.reactive.function.client.WebClientResponseException) {
-                        org.springframework.web.reactive.function.client.WebClientResponseException wcException =
-                            (org.springframework.web.reactive.function.client.WebClientResponseException) e;
-                              System.err.println("ERROR 400 de Google Token Exchange (WebClient): " + wcException.getStatusCode());
-                        System.err.println("Cuerpo de respuesta de error de Google: " + wcException.getResponseBodyAsString()); // <<< ¡Esto mostrará el mensaje de Google!
+                        org.springframework.web.reactive.function.client.WebClientResponseException wcException = (org.springframework.web.reactive.function.client.WebClientResponseException) e;
+                        System.err.println(
+                                "ERROR 400 de Google Token Exchange (WebClient): " + wcException.getStatusCode());
+                        System.err.println(
+                                "Cuerpo de respuesta de error de Google: " + wcException.getResponseBodyAsString()); // <<<
+                                                                                                                     // ¡Esto
+                                                                                                                     // mostrará
+                                                                                                                     // el
+                                                                                                                     // mensaje
+                                                                                                                     // de
+                                                                                                                     // Google!
                         System.err.println("Encabezados de respuesta de error: " + wcException.getHeaders());
-                        return new RuntimeException("Google token exchange failed: " + wcException.getStatusCode() + " - " + wcException.getResponseBodyAsString(), e);
+                        return new RuntimeException("Google token exchange failed: " + wcException.getStatusCode()
+                                + " - " + wcException.getResponseBodyAsString(), e);
                     }
                     return new RuntimeException("Error exchanging Google code for token: " + e.getMessage(), e);
                 });
@@ -98,7 +102,8 @@ public class GoogleTokenManager {
 
     /**
      * Decodifica y verifica la firma y expiración de un ID Token de Google.
-     * Esta operación es potencialmente bloqueante debido a la descarga de JWKs y verificación criptográfica,
+     * Esta operación es potencialmente bloqueante debido a la descarga de JWKs y
+     * verificación criptográfica,
      * por lo que se ejecuta en un Scheduler separado.
      *
      * @param idToken El ID Token JWT de Google.
@@ -114,7 +119,8 @@ public class GoogleTokenManager {
                 throw new JWTVerificationException("Google ID Token missing kid header.");
             }
 
-            // Obtener la clave pública correspondiente del JwkProvider (puede ser blocking si no está en caché)
+            // Obtener la clave pública correspondiente del JwkProvider (puede ser blocking
+            // si no está en caché)
             Jwk jwk = jwkProvider.get(keyId);
             RSAPublicKey publicKey = (RSAPublicKey) jwk.getPublicKey();
 
@@ -126,17 +132,20 @@ public class GoogleTokenManager {
                     .build()
                     .verify(idToken);
         })
-        // Suscribirse en un scheduler elástico para no bloquear el hilo principal (Netty)
-        .subscribeOn(Schedulers.boundedElastic())
-        .onErrorMap(e -> {
-            // Mapear excepciones de verificación JWT a un tipo de excepción más adecuado
-            if (e instanceof JwkException) {
-                return new RuntimeException("Failed to retrieve Google public key for JWT verification: " + e.getMessage(), e);
-            }
-            if (e instanceof JWTVerificationException) {
-                return new RuntimeException("Google ID Token verification failed: " + e.getMessage(), e);
-            }
-            return new RuntimeException("Unexpected error during Google ID Token verification: " + e.getMessage(), e);
-        });
+                // Suscribirse en un scheduler elástico para no bloquear el hilo principal
+                // (Netty)
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorMap(e -> {
+                    // Mapear excepciones de verificación JWT a un tipo de excepción más adecuado
+                    if (e instanceof JwkException) {
+                        return new RuntimeException(
+                                "Failed to retrieve Google public key for JWT verification: " + e.getMessage(), e);
+                    }
+                    if (e instanceof JWTVerificationException) {
+                        return new RuntimeException("Google ID Token verification failed: " + e.getMessage(), e);
+                    }
+                    return new RuntimeException(
+                            "Unexpected error during Google ID Token verification: " + e.getMessage(), e);
+                });
     }
 }

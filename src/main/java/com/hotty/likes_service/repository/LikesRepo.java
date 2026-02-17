@@ -153,4 +153,39 @@ public class LikesRepo {
                 });
     }
 
+    /**
+     * Actualiza la imagen de un usuario en todos los likes donde aparece como
+     * sender.
+     * 
+     * @param senderUID     ID del usuario cuya imagen cambió
+     * @param newPictureUrl Nueva URL de la imagen
+     * @return Un {@link Flux} que emite todos los {@link LikeModel} actualizados
+     * @throws IllegalArgumentException si senderUID es nulo o está vacío, o si
+     *                                  newPictureUrl es nulo
+     */
+    public Flux<LikeModel> updateSenderPictureInAllLikes(String senderUID, String newPictureUrl) {
+        if (senderUID == null || senderUID.isBlank()) {
+            return Flux.error(new IllegalArgumentException("El Sender UID no puede ser nulo o vacío."));
+        }
+        if (newPictureUrl == null) {
+            return Flux.error(new IllegalArgumentException("La nueva URL de imagen no puede ser nula."));
+        }
+
+        // Query para encontrar todos los likes donde el usuario es el sender
+        Query query = new Query();
+        query.addCriteria(Criteria.where("senderUID").is(senderUID));
+
+        // Buscar todos los likes del usuario como sender
+        return template.find(query, LikeModel.class)
+                .flatMap(like -> {
+                    // Actualizar la imagen del sender
+                    like.setSenderPictureURL(newPictureUrl);
+
+                    // Guardar el like actualizado
+                    return template.save(like);
+                })
+                .onErrorMap(error -> new RuntimeException(
+                        "Error al actualizar imágenes en likes para sender: " + senderUID + ". " + error.getMessage(),
+                        error));
+    }
 }

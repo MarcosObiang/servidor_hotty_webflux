@@ -15,16 +15,20 @@ import com.hotty.user_service.DTOs.UserDTO;
 import com.hotty.user_service.DTOs.UpdateFilterCharacteristicsRequest;
 import com.hotty.user_service.DTOs.UserDTOwithDistance;
 import com.hotty.user_service.Serializers.GeoJsonPointDeserializer;
+import com.hotty.user_service.enums.LocalizationCodes;
 import com.hotty.user_service.model.UserCharacteristicsModel;
 import com.hotty.user_service.model.UserDataModel;
 import com.hotty.user_service.model.UserSettingsModel;
 import com.hotty.ApiResponse.ApiResponse;
+import com.hotty.common.enums.NotificationProvider;
+import com.hotty.subscriptions_service.DTOs.RevenueCatWebhookPayload;
 import com.hotty.user_service.usecases.ClaimFirstRewardUseCase;
 import com.hotty.user_service.usecases.CreateUserUseCase;
 import com.hotty.user_service.usecases.DeleteUserUseCase;
 import com.hotty.user_service.usecases.GetUserByPositionUseCase;
 import com.hotty.user_service.usecases.GetUserByUIDUseCase;
 import com.hotty.user_service.usecases.MakePurchaseForUserWithCreditsUseCase;
+import com.hotty.user_service.usecases.ProcessRevenueCatPurchasesUseCase;
 import com.hotty.user_service.usecases.RenewUserCreditsUseCase;
 import com.hotty.user_service.usecases.UpdateAverageRatingUseCase;
 import com.hotty.user_service.usecases.UpdateBioUseCase;
@@ -67,6 +71,7 @@ public class Controller {
         private final ClaimFirstRewardUseCase claimFirstRewardUseCase; // Use case for claiming first reward
         private final MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase;
         private final UpdateDeviceNotificationToken updateDeviceNotificationToken;
+        private final ProcessRevenueCatPurchasesUseCase processRevenueCatPurchasesUseCase;
 
         // Use case for updating user bio
 
@@ -86,7 +91,8 @@ public class Controller {
                         RenewUserCreditsUseCase renewUserCreditsUseCase,
                         ClaimFirstRewardUseCase claimFirstRewardUseCase,
                         MakePurchaseForUserWithCreditsUseCase makePurchaseForUserWithCreditsUseCase,
-                        UpdateDeviceNotificationToken updateDeviceNotificationToken) {
+                        UpdateDeviceNotificationToken updateDeviceNotificationToken,
+                        ProcessRevenueCatPurchasesUseCase userSubscriptionService) {
                 this.createUserUseCase = createUserUseCase;
                 this.getUserByUIDUseCase = getUserByUIDUseCase;
                 this.getUserByPositionUseCase = getUserByPositionUseCase;
@@ -105,6 +111,7 @@ public class Controller {
                 this.claimFirstRewardUseCase = claimFirstRewardUseCase; // Use case for claiming first reward
                 this.makePurchaseForUserWithCreditsUseCase = makePurchaseForUserWithCreditsUseCase;
                 this.updateDeviceNotificationToken = updateDeviceNotificationToken;
+                this.processRevenueCatPurchasesUseCase = userSubscriptionService;
         }
 
         // CREATE METHODS
@@ -337,11 +344,50 @@ public class Controller {
                 if (deviceNotificationToken == null) {
                         return Mono.error(new IllegalArgumentException("Device notification token is required."));
                 }
+                String providerStr = request.get("provider");
+                if (providerStr == null) {
+                        return Mono.error(new IllegalArgumentException("Notification provider is required."));
+                }
 
-                return updateDeviceNotificationToken.execute(userUID, deviceNotificationToken)
+                String localeStr = request.get("locale");
+                if (localeStr == null) {
+                        return Mono.error(new IllegalArgumentException("Locale is required."));
+                }
+
+                NotificationProvider provider;
+
+                try {
+                        provider = NotificationProvider.valueOf(providerStr.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                        return Mono.error(new IllegalArgumentException("Invalid notification provider."));
+                }
+
+                LocalizationCodes locale;
+                try {
+                        locale = LocalizationCodes.valueOf(localeStr.toUpperCase());
+                        System.out.println("Parsed locale: " + locale);
+                } catch (IllegalArgumentException e) {
+                        return Mono.error(new IllegalArgumentException("Invalid locale."));
+                }
+
+                return updateDeviceNotificationToken.execute(userUID, deviceNotificationToken, provider, locale)
                                 .map(updatedUser -> ResponseEntity.ok(
                                                 ApiResponse.success("Device notification token updated successfully.",
                                                                 updatedUser)));
+        }
+
+        @PostMapping("/webhooks/revenuecat")
+        public Mono<ResponseEntity<Object>> webhook(@RequestBody RevenueCatWebhookPayload event) {
+
+                System.out.println("Received RevenueCat webhook event: " + event);
+                // Redirecciona la solicitud al servicio de backend.
+                // La validación de la firma se realiza en el filtro del Gateway antes de llegar
+                // aquí.
+                return processRevenueCatPurchasesUseCase.execute(event.getEvent()).doOnSuccess(data -> {
+                        System.out.println("Evento procesado correctamente: " + event);
+                }).doOnError(error -> {
+                        System.err.println("Error procesando el evento: " + error.getMessage());
+                }).then(Mono.just(ResponseEntity.ok().build()));
         }
 
 }

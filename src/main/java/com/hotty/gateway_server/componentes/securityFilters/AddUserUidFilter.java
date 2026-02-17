@@ -30,7 +30,7 @@ public class AddUserUidFilter implements WebFilter, Ordered {
         // La exclusión de rutas como /auth/google/code** se maneja mejor en SecurityConfig.
         // Si este filtro se aplica a todas las rutas y necesitas excluir algunas aquí,
         // considera una lista configurable de patrones o un AntPathMatcher.
-        if (exchange.getRequest().getURI().getPath().contains("/auth/") && exchange.getRequest().getURI().getPath().endsWith("/callback") || exchange.getRequest().getURI().getPath().startsWith("/oauth/") || exchange.getRequest().getURI().getPath().startsWith("/subscriptions-service/")) {
+        if (exchange.getRequest().getURI().getPath().contains("/auth/") && exchange.getRequest().getURI().getPath().endsWith("/callback") || exchange.getRequest().getURI().getPath().startsWith("/oauth/") || exchange.getRequest().getURI().getPath().startsWith("/subscriptions-service/webhooks/")) {
             return chain.filter(exchange);
         }
 

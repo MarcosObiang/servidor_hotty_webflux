@@ -1,14 +1,17 @@
 package com.hotty.common.config;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.mongodb.ReactiveMongoDatabaseFactory;
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager;
+import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguration;
 import org.springframework.data.mongodb.config.EnableReactiveMongoAuditing;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.index.ReactiveIndexOperations;
@@ -16,6 +19,11 @@ import org.springframework.data.mongodb.core.index.MongoPersistentEntityIndexRes
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.reactivestreams.client.MongoClient;
+import com.mongodb.reactivestreams.client.MongoClients;
 
 import com.hotty.auth_service.models.AuthDataModel;
 import com.hotty.auth_service.models.AuthTokenDataModel;
@@ -34,9 +42,63 @@ import reactor.core.publisher.Mono;
 @Configuration
 @EnableReactiveMongoAuditing
 @EnableTransactionManagement
-public class MongoConfig {
+public class MongoConfig extends AbstractReactiveMongoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(MongoConfig.class);
+
+    @Value("${spring.data.mongodb.database}")
+    private String databaseName;
+
+    @Value("${spring.data.mongodb.uri}")
+    private String mongoUri;
+
+    @Value("${mongodb.connection.pool.max-size:20}")
+    private int maxPoolSize;
+
+    @Value("${mongodb.connection.pool.min-size:5}")
+    private int minPoolSize;
+
+    @Value("${mongodb.connection.timeout-ms:5000}")
+    private int connectionTimeoutMs;
+
+    @Value("${mongodb.socket.timeout-ms:10000}")
+    private int socketTimeoutMs;
+
+    @Override
+    protected String getDatabaseName() {
+        return databaseName;
+    }
+
+    /**
+     * Configuración optimizada del MongoClient para transacciones robustas
+     */
+    @Override
+    @Bean
+    public MongoClient reactiveMongoClient() {
+        ConnectionString connectionString = new ConnectionString(mongoUri);
+        
+        MongoClientSettings settings = MongoClientSettings.builder()
+                .applyConnectionString(connectionString)
+                .applyToConnectionPoolSettings(builder -> 
+                    builder.maxSize(maxPoolSize)
+                           .minSize(minPoolSize)
+                           .maxConnectionLifeTime(30, TimeUnit.MINUTES)
+                           .maxConnectionIdleTime(10, TimeUnit.MINUTES))
+                .applyToSocketSettings(builder -> 
+                    builder.connectTimeout(connectionTimeoutMs, TimeUnit.MILLISECONDS)
+                           .readTimeout(socketTimeoutMs, TimeUnit.MILLISECONDS))
+                .applyToServerSettings(builder -> 
+                    builder.heartbeatFrequency(10, TimeUnit.SECONDS)
+                           .minHeartbeatFrequency(500, TimeUnit.MILLISECONDS))
+                .retryWrites(true)
+                .retryReads(true)
+                .build();
+
+        log.info("MongoDB client configured with optimized connection pool: max={}, min={}, connTimeout={}ms, socketTimeout={}ms", 
+                maxPoolSize, minPoolSize, connectionTimeoutMs, socketTimeoutMs);
+
+        return MongoClients.create(settings);
+    }
 
     /**
      * Bean para el manejador de transacciones reactivas de MongoDB.

@@ -42,6 +42,8 @@ public interface AuthTokenDataModelRepository {
 
     Mono<AuthTokenDataModel> saveTokenToAuditLog(AuthTokenDataModel token);
 
-    Mono<Void> revokeActiveToken(String tokenUID,Duration tokenRemainingLifrtimeDuration);
+    Mono<AuthTokenDataModel> findByTokenUID(String tokenUID);
+
+    Mono<Void> revokeActiveToken(String tokenUID, Duration tokenRemainingLifetimeDuration);
 
 }

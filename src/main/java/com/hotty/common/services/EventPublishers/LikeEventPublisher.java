@@ -33,7 +33,16 @@ public class LikeEventPublisher {
         this.objectMapper = objectMapper;
     }
 
-    public Mono<Void> publishUserCreated(LikeModel user) {
+
+    /**
+     * Publica un evento de creación de Like.
+     * en el canal de eventos de usuario.
+     * ubicado en redis para que este disponible para el escuchador donde el usuario este conectado
+     * @param user
+     * @return
+     */
+
+    public Mono<Void> publishLikeCreated(LikeModel user) {
         EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.CREATE);
         event.setBody(user);
@@ -43,7 +52,16 @@ public class LikeEventPublisher {
         return publish(event);
     }
 
-    public Mono<Void> publishUserUpdated(LikeModel user) {
+
+    /**
+     * Publica un evento de actualización de Like.
+     * en el canal de eventos de usuario.
+     * ubicado en redis para que este disponible para el escuchador donde el usuario este conectado
+     * @param user
+     * @return
+     */
+
+    public Mono<Void> publishLikeUpdated(LikeModel user) {
         EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.UPDATE);
         event.setBody(user);
@@ -53,7 +71,14 @@ public class LikeEventPublisher {
         return publish(event);
     }
 
-    public Mono<Void> publishUserDeleted(LikeModel deletedLike) {
+    /**
+     * Publica un evento de eliminación de Like.
+     * en el canal de eventos de usuario.
+     * ubicado en redis para que este disponible para el escuchador donde el usuario este conectado
+     * @param deletedLike
+     * @return
+     */
+    public Mono<Void> publishLikeDeleted(LikeModel deletedLike) {
         EventWrapper<LikeModel> event = new EventWrapper<>();
         event.setEventType(PublishEventType.DELETED);
         event.setBody(deletedLike); // Enviar el objeto completo para consistencia.
@@ -63,6 +88,15 @@ public class LikeEventPublisher {
         event.setReceiverUID(deletedLike.getReceiverUID());
         return publish(event);
     }
+
+
+    /**
+     * Método genérico para publicar eventos en Redis.
+     *
+     * @param event El evento a publicar.
+     * @param <T>   Tipo de dato del cuerpo del evento.
+     * @return Mono<Void> que indica la finalización de la publicación.
+     */
 
     private <T> Mono<Void> publish(EventWrapper<T> event) {
         return Mono.fromCallable(() -> objectMapper.writeValueAsString(event))

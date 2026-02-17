@@ -40,12 +40,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Desactiva CSRF para APIs REST
                 .authorizeExchange(exchange -> exchange
                         // Rutas públicas del gateway (OAuth2 y autenticación)
-                        .pathMatchers("/auth/{provider}/callback/**", "/oauth/**").permitAll()
+                        .pathMatchers("/auth/*/callback/**").permitAll()
                         
                         // Rutas públicas específicas de servicios
-                        .pathMatchers("/subscriptions-service/**").permitAll()
                         .pathMatchers("/health", "/actuator/**").permitAll()
-                        
+
+                        // Rutas públicas específicas de servicios
+                        .pathMatchers("/subscriptions-service/webhooks/**").permitAll()
+
                         // Todas las demás rutas requieren autenticación
                         .anyExchange().authenticated()
                 )

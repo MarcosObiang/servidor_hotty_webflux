@@ -171,4 +171,38 @@ public class ChatRepositoryImpl implements ChatRepository {
                 })
                 .onErrorMap(e -> new RuntimeException("Error en BD al eliminar chats del usuario: " + e.getMessage(), e));
     }
+
+    /**
+     * Actualiza la imagen de un usuario en todos sus chats donde aparece
+     * @param userId ID del usuario cuya imagen cambió  
+     * @param newPictureUrl Nueva URL de la imagen
+     * @return Flux<ChatModel> todos los chats actualizados
+     */
+    @Override
+    public Flux<ChatModel> updateUserPictureInAllChats(String userId, String newPictureUrl) {
+        // Primero buscar todos los chats del usuario
+        return findByUserId(userId)
+            .flatMap(chat -> {
+                // Actualizar la imagen según si es user1 o user2
+                boolean updated = false;
+                
+                if (chat.getUser1Id().equals(userId)) {
+                    chat.setUser1Picture(newPictureUrl);
+                    updated = true;
+                }
+                
+                if (chat.getUser2Id().equals(userId)) {
+                    chat.setUser2Picture(newPictureUrl);
+                    updated = true;
+                }
+                
+                // Solo guardar si hubo cambios
+                if (updated) {
+                    return update(chat); // Reutiliza el método update existente
+                } else {
+                    return Mono.just(chat); // No hubo cambios, devolver original
+                }
+            })
+            .onErrorMap(e -> new RuntimeException("Error al actualizar imágenes en chats para usuario: " + userId, e));
+    }
 }

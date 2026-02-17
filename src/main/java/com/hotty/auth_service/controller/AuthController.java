@@ -18,6 +18,7 @@ import com.hotty.ApiResponse.ApiResponse;
 import com.hotty.auth_service.usecases.DeleteUserAuthDataUseCase;
 import com.hotty.auth_service.usecases.GetUserAuthDataUseCase;
 import com.hotty.auth_service.usecases.LogOutUseCase;
+import com.hotty.auth_service.usecases.RefreshTokenUseCase;
 import com.hotty.auth_service.usecases.RestoreUserAuthDataUseCase;
 
 import reactor.core.publisher.Mono;
@@ -31,15 +32,17 @@ public class AuthController {
     private final DeleteUserAuthDataUseCase deleteUserAuthDataUseCase;
     private final GetUserAuthDataUseCase getUserAuthDataUseCase;
     private final RestoreUserAuthDataUseCase restoreUserAuthDataUseCase;
+    private final RefreshTokenUseCase refreshTokenUseCase;
 
     public AuthController(AuthProviderStrategyFactory authProviderStrategyFactory, LogOutUseCase logOutUseCase, 
                          DeleteUserAuthDataUseCase deleteUserAuthDataUseCase, GetUserAuthDataUseCase getUserAuthDataUseCase,
-                         RestoreUserAuthDataUseCase restoreUserAuthDataUseCase) {
+                         RestoreUserAuthDataUseCase restoreUserAuthDataUseCase, RefreshTokenUseCase refreshTokenUseCase) {
         this.logOutUseCase = logOutUseCase;
         this.authProviderStrategyFactory = authProviderStrategyFactory;
         this.deleteUserAuthDataUseCase = deleteUserAuthDataUseCase;
         this.getUserAuthDataUseCase = getUserAuthDataUseCase;
         this.restoreUserAuthDataUseCase = restoreUserAuthDataUseCase;
+        this.refreshTokenUseCase = refreshTokenUseCase;
     }
 
     // /**
@@ -99,6 +102,13 @@ public class AuthController {
             @RequestBody AuthDataModel authDataModel) {
         return restoreUserAuthDataUseCase.execute(authDataModel)
                 .map(restoredData -> ResponseEntity.ok(ApiResponse.success("User authentication data restored successfully.", restoredData)));
+    }
+
+    @PostMapping("/refresh-token")
+    public Mono<ResponseEntity<ApiResponse<AuthTokenDataModel>>> refreshToken(
+            @RequestBody String refreshToken) {
+        return refreshTokenUseCase.execute(refreshToken)
+                .map(newTokenData -> ResponseEntity.ok(ApiResponse.success("Token refreshed successfully.", newTokenData)));
     }
 
 };

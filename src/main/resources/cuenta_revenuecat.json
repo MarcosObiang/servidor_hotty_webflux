@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "hotty-notificaciones",
+  "private_key_id": "2faed3c25617ce4b0fc11354c97d044ef9f85c22",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDmT1La2xgNj3eU\ntvNsdukefRo3MYiHANtkjKf73zt5zOERZbXRb9vKXv07/sslokio2t5JXqnbxXlE\nH9TPLjM1NEeZoLBIBL2XueoOLirdPX9eE6/fpLk/HyJW+HHyLRywZr8ZDmXXCMZk\nWwrwzI5ZAYRh6QAYNO83Pqjalq2uGeOoyr9Xm2pNgm7T4VEKwoX2ZXLM7qUf6YE6\nZcVdG8U7RhYtGwL4kS22XzwyuxDEUz/J272ad3cx429eCVh+UP6KOTAflguJM1Ie\nsANlwOd8i7qJZf6VK66A7NF95jADG6y5k1x7FurtnqdatnZqbndk7ptZiC/qmcKn\nv3Mw2wxtAgMBAAECggEAYTKIArJlb8+lBX/CsvtqPgJJLpL6jhNYBBLykDNxi+Fh\n+TAmMCoXpcw57niFLrBTHuQj3O4VHJm2KICQlRFn7iPOtfDhhLtvclm1hF+Kmo1q\nM/92AZoozhFrMi4vFKhiS7ZJHx967moXJGJh9yc1Si4AOzwU3KJ2dKe+pmXiDa+1\ndwv9vYmVyG6QAd/OHS6O0DYCqYCT/Tgeg+D1mQBzKYDKzk/tqsN8MnfTHh5DbhXW\nIy42YTvMWfPuK2+kZdBmEkwZRw4ek9sF/Y7gN3XGm4wGWh4pGj2YoylRG+0M7WE2\ngHsGclH9uvTfg8kyRHEwqvs1KwqWOFMqbZRqxlINFwKBgQDzjo5j1XxgXi/qOdsA\nOTA1uRJOruJo0OQjts8bF7r4nYjHikvER7X6vS9glmXvEMZWXuQeUt5KJVaQ166U\nRlZC+5vyrPQI9HdMTmuyp6ZdPqMA5oUUMyUaGBhhbAcvq1KodlaPXyibShUbCpMc\n/V5lNQ6uIc2IRye3ekqV7OVoRwKBgQDyE4MKeVbTKMFy2YeyfXCao60p42H2XWmi\nng9pQR/qPVdhS2omMshH3mCihGOX4n48GDjpYbUHxOmvSOS+Ty0bq+qUkOjKys9q\nOBb7nBpO2ECETabNI+r2Mtwp79FXWih0J07cHmS85OQiY4pxpaOPcFQHgG9tJcky\nsoON9cXzqwKBgQDSaidz8p1IeDa3CZK9Z6rRzvkVBxvNaCKhBC96/Y5neVoQ4dbB\nVR7P55/Ft0mLNxfSyJoV5IvszMMz0VIfAYFGzy8Ugf02u1VRlDKRHyuoRRP4FC+G\nmwUDvStbB0RSF5YKumnf5VskheUj/ofINNDXaPYs1EFH6glTBxDm48nxwwKBgQCE\nPyqYnz9SrnI4ZyRd22+X25EvUBxldhTOlSEANGbWFdrVuVhtM9L8iD0sq7yo7kBe\nXjFBNnKqouWzL9RfL2wKMPo/XYb/uppjge70WAx7RGLCpJVafqPPCmwCsRQhb4yo\nIA1R7XzFQRpsuwqYGZBoPUp6qqy06S6odqOt+zXAbwKBgQCslSnSu4NU2OsAkw1Q\na0UJlYNGjln+4fTaVafseZzDNAEiYQ2mh3E7hJELCEtrPfUiBPXilhTae2Uf/ldE\nX5RLhEQlbTYsIk5hnTHk4/KcgXjq1zJ5Up7wx5lMflZoxlAO0ATWhqCJqQZQDvCX\nL1vf2KdvVFR/2OzMOhFjnmUTQQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "revenuecat-acess@hotty-notificaciones.iam.gserviceaccount.com",
+  "client_id": "102345019622447916182",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/revenuecat-acess%40hotty-notificaciones.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

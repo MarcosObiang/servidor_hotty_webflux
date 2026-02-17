@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.hotty.common.common_transactions.MongoTransactionsRepository;
+import com.hotty.common.common_transactions.TransactionRetryHelper;
 import com.hotty.likes_service.usecases.CreateLikeUseCase;
 import com.hotty.user_service.usecases.UpdateAverageRatingUseCase;
 import com.hotty.likes_service.model.LikeModel;
@@ -19,13 +20,16 @@ public class CreateLikeCommonUseCase {
     private static final Logger log = LoggerFactory.getLogger(CreateLikeCommonUseCase.class);
 
     private final MongoTransactionsRepository transactionsRepository;
+    private final TransactionRetryHelper retryHelper;
     private final CreateLikeUseCase createLikeUseCase;
     private final UpdateAverageRatingUseCase updateAverageRatingUseCase;
 
     public CreateLikeCommonUseCase(MongoTransactionsRepository transactionsRepository,
+                                 TransactionRetryHelper retryHelper,
                                  CreateLikeUseCase createLikeUseCase,
                                  UpdateAverageRatingUseCase updateAverageRatingUseCase) {
         this.transactionsRepository = transactionsRepository;
+        this.retryHelper = retryHelper;
         this.createLikeUseCase = createLikeUseCase;
         this.updateAverageRatingUseCase = updateAverageRatingUseCase;
     }
@@ -60,8 +64,8 @@ public class CreateLikeCommonUseCase {
             return Mono.error(new IllegalArgumentException("likeValue must be between 0 and 100."));
         }
 
-        // Ejecutar ambas operaciones en una TRANSACCIÓN
-        return transactionsRepository.executeInTransaction(template -> {
+        // Ejecutar ambas operaciones en una TRANSACCIÓN con REINTENTOS
+        Mono<LikeModel> transactionOperation = transactionsRepository.executeInTransaction(template -> {
             log.debug("Executing like creation and rating update in transaction");
 
             // 1. Actualizar el rating promedio del usuario receptor
@@ -79,7 +83,13 @@ public class CreateLikeCommonUseCase {
                     .doOnError(error -> 
                         log.error("Transaction failed for like creation. User: {}, Receiver: {}, Error: {}", 
                                 userUID, receiverUID, error.getMessage()));
-        })
+        });
+
+        // Aplicar reintentos para errores transitorios
+        return retryHelper.executeWithRetry(
+                transactionOperation, 
+                "CreateLike_Transaction_" + userUID + "_to_" + receiverUID
+        )
         .doOnSuccess(like -> log.info("Like created successfully: {}", like.getLikeUID()))
         .doOnError(error -> log.error("Failed to create like for user: {} -> {}: {}", 
                 userUID, receiverUID, error.getMessage()));

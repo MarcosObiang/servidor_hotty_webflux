@@ -51,7 +51,7 @@ public class UpdateLikeUseCase {
                     return likesRepo.add(likeToUpdate) // 'add' funciona como save/update
                             .flatMap(updatedLike ->
                                     // Encadenamos la publicación y devolvemos el like actualizado.
-                                    publisher.publishUserUpdated(updatedLike).thenReturn(updatedLike));
+                                    publisher.publishLikeUpdated(updatedLike).thenReturn(updatedLike));
                 });
     }
 

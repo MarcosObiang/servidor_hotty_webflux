@@ -96,6 +96,8 @@ public class ChatEventPublisher {
         return publish(event);
     }
 
+
+
     private <T> Mono<Void> publish(EventWrapper<T> event) {
         return Mono.fromCallable(() -> objectMapper.writeValueAsString(event))
                 .flatMap(eventJson -> reactiveRedisTemplate.convertAndSend(USER_EVENTS_CHANNEL, eventJson))
